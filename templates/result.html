@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your FinScore Result — {{ data.TOTAL_SCORE }}/900</title>
+  <meta name="description" content="Your FinScore alternative credit score is {{ data.TOTAL_SCORE }} out of 900 — {{ data.band }}." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  <style>
+    :root {
+      --score-color: {{ data.color }};
+    }
+  </style>
+</head>
+<body class="result-page">
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <!-- Top Nav -->
+  <nav class="result-nav">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+          <circle cx="24" cy="24" r="24" fill="url(#grad2)"/>
+          <path d="M16 32V22l8-6 8 6v10H28v-6h-8v6H16Z" fill="white"/>
+          <defs>
+            <linearGradient id="grad2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#16a34a"/>
+              <stop offset="1" stop-color="#15803d"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="brand-name">FinScore</span>
+    </div>
+    <a href="/" class="nav-link">← Analyze Another</a>
+  </nav>
+
+  <main class="result-container">
+
+    <!-- Score Section -->
+    <section class="score-section">
+      <p class="score-label">Your Alternative Credit Score</p>
+
+      <div class="score-ring-wrapper">
+        <svg class="score-ring" viewBox="0 0 200 200" width="200" height="200">
+          <circle cx="100" cy="100" r="84" fill="none" stroke="#e5e7eb" stroke-width="14"/>
+          <circle cx="100" cy="100" r="84" fill="none"
+                  stroke="{{ data.color }}"
+                  stroke-width="14"
+                  stroke-linecap="round"
+                  stroke-dasharray="527"
+                  stroke-dashoffset="{{ (1 - (data.TOTAL_SCORE|int - 300) / 600) * 527 }}"
+                  transform="rotate(-90 100 100)"
+                  class="ring-fill"/>
+        </svg>
+        <div class="score-inner">
+          <span class="score-number" style="color: {{ data.color }}">{{ data.TOTAL_SCORE }}</span>
+          <span class="score-max">/900</span>
+          <span class="score-band-label" style="background: {{ data.color }}">{{ data.band }}</span>
+        </div>
+      </div>
+
+      <p class="score-date">Generated {{ data.generated_at }}</p>
+    </section>
+
+    <!-- Factor Cards -->
+    <section class="factors-section">
+      <h2 class="factors-heading">Score Breakdown</h2>
+
+      <div class="factors-grid">
+
+        <!-- Income Regularity -->
+        <div class="factor-card" style="--accent: #16a34a">
+          <div class="factor-header">
+            <div class="factor-icon income-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M11 8V5H9V3h6v2h-2v3a7 7 0 1 1-2 0Zm1 2a5 5 0 1 0 0 10A5 5 0 0 0 12 10Z"/></svg>
+            </div>
+            <span class="factor-name">Income Regularity</span>
+            <div class="factor-score-badge" style="background: {{ data.color }}">
+              {{ data.INCOME_SCORE }}<span class="factor-score-max">/25</span>
+            </div>
+          </div>
+          <div class="factor-bar-track">
+            <div class="factor-bar-fill" style="width: {{ (data.INCOME_SCORE|int / 25 * 100)|round }}%; background: {{ data.color }}"></div>
+          </div>
+          <p class="factor-text">{{ data.INCOME_TEXT }}</p>
+        </div>
+
+        <!-- Payment Discipline -->
+        <div class="factor-card" style="--accent: #16a34a">
+          <div class="factor-header">
+            <div class="factor-icon payment-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 14H4V10h16v8Zm0-10H4V6h16v2Z"/></svg>
+            </div>
+            <span class="factor-name">Payment Discipline</span>
+            <div class="factor-score-badge" style="background: {{ data.color }}">
+              {{ data.PAYMENT_SCORE }}<span class="factor-score-max">/25</span>
+            </div>
+          </div>
+          <div class="factor-bar-track">
+            <div class="factor-bar-fill" style="width: {{ (data.PAYMENT_SCORE|int / 25 * 100)|round }}%; background: {{ data.color }}"></div>
+          </div>
+          <p class="factor-text">{{ data.PAYMENT_TEXT }}</p>
+        </div>
+
+        <!-- Spending Stability -->
+        <div class="factor-card" style="--accent: #16a34a">
+          <div class="factor-header">
+            <div class="factor-icon spending-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M3.5 18.5 2 17l7-7 4 4 7.5-8.5 1.5 1.3-9 10.2-4-4-6 6.5Z"/></svg>
+            </div>
+            <span class="factor-name">Spending Stability</span>
+            <div class="factor-score-badge" style="background: {{ data.color }}">
+              {{ data.SPENDING_SCORE }}<span class="factor-score-max">/25</span>
+            </div>
+          </div>
+          <div class="factor-bar-track">
+            <div class="factor-bar-fill" style="width: {{ (data.SPENDING_SCORE|int / 25 * 100)|round }}%; background: {{ data.color }}"></div>
+          </div>
+          <p class="factor-text">{{ data.SPENDING_TEXT }}</p>
+        </div>
+
+        <!-- Savings Behavior -->
+        <div class="factor-card" style="--accent: #16a34a">
+          <div class="factor-header">
+            <div class="factor-icon savings-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 10h-1V7c0-2.76-2.24-5-5-5S8 4.24 8 7v3H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm3.1-7H9.9V7c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v3Z"/></svg>
+            </div>
+            <span class="factor-name">Savings Behavior</span>
+            <div class="factor-score-badge" style="background: {{ data.color }}">
+              {{ data.SAVINGS_SCORE }}<span class="factor-score-max">/25</span>
+            </div>
+          </div>
+          <div class="factor-bar-track">
+            <div class="factor-bar-fill" style="width: {{ (data.SAVINGS_SCORE|int / 25 * 100)|round }}%; background: {{ data.color }}"></div>
+          </div>
+          <p class="factor-text">{{ data.SAVINGS_TEXT }}</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="summary-section">
+      <h2 class="summary-heading">Overall Assessment</h2>
+      <p class="summary-text">{{ data.SUMMARY }}</p>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions-row">
+      <a href="/download" class="btn-primary" id="download-btn">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19 9h-4V3H9v6H5l7 7 7-7ZM5 18v2h14v-2H5Z"/></svg>
+        Download PDF Report
+      </a>
+      <a href="/" class="btn-secondary">Analyze Another Statement</a>
+    </div>
+
+  </main>
+
+  <script>
+    // Animate ring on load
+    document.addEventListener('DOMContentLoaded', () => {
+      const ring = document.querySelector('.ring-fill');
+      if (ring) {
+        const target = parseFloat(ring.getAttribute('stroke-dashoffset'));
+        ring.style.strokeDashoffset = '527';
+        setTimeout(() => {
+          ring.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)';
+          ring.style.strokeDashoffset = target;
+        }, 200);
+      }
+
+      // Animate progress bars
+      document.querySelectorAll('.factor-bar-fill').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0';
+        setTimeout(() => {
+          bar.style.transition = 'width 1s cubic-bezier(0.4,0,0.2,1)';
+          bar.style.width = w;
+        }, 400);
+      });
+
+      // Count-up for score number
+      const scoreEl = document.querySelector('.score-number');
+      if (scoreEl) {
+        const target = parseInt(scoreEl.textContent);
+        let current = 300;
+        const step = Math.ceil((target - 300) / 60);
+        const iv = setInterval(() => {
+          current = Math.min(current + step, target);
+          scoreEl.textContent = current;
+          if (current >= target) clearInterval(iv);
+        }, 16);
+      }
+    });
+  </script>
+</body>
+</html>

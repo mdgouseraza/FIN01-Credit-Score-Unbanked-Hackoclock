@@ -1,0 +1,18 @@
+Date,Description,Debit,Credit,Balance
+2024-01-01,Opening Balance,0,0,5000
+2024-01-03,UPI-Salary Credit,0,25000,30000
+2024-01-05,UPI-Rent Payment,8000,0,22000
+2024-01-07,Electricity Bill,1200,0,20800
+2024-01-10,Grocery Store,800,0,20000
+2024-01-15,Mobile Recharge,299,0,19701
+2024-01-20,UPI Transfer In,0,2000,21701
+2024-02-03,UPI-Salary Credit,0,25000,46701
+2024-02-05,UPI-Rent Payment,8000,0,38701
+2024-02-08,Electricity Bill,1100,0,37601
+2024-02-12,Grocery Store,950,0,36651
+2024-02-18,Medical Payment,500,0,36151
+2024-03-03,UPI-Salary Credit,0,25000,61151
+2024-03-05,UPI-Rent Payment,8000,0,53151
+2024-03-07,Electricity Bill,1300,0,51851
+2024-03-11,Grocery Store,700,0,51151
+2024-03-25,UPI Transfer Out,2000,0,49151
