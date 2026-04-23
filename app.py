@@ -55,39 +55,111 @@ def parse_csv(filepath):
         f"Avg Monthly Credit: {avg_credit} | Debit/Credit Ratio: {ratio} | "
         f"Balance Trend: {trend} | Regular Income Months: {regular_income_months}/{months}"
     )
-    return summary
+    
+    metrics = {
+        "total_credits": float(total_credits),
+        "total_debits": float(total_debits),
+        "months": months,
+        "avg_credit": float(avg_credit),
+        "regular_income_months": int(regular_income_months),
+        "ratio": float(ratio),
+        "trend": trend
+    }
+    return summary, metrics
 
 
-def call_gemini(summary):
-    prompt = f"""You are a financial analyst. Based on this transaction summary for an unbanked Indian user, generate an alternative credit assessment.
+def calculate_score(metrics):
+    months = metrics["months"]
+    regular_income_months = metrics["regular_income_months"]
+    ratio = metrics["ratio"]
+    trend = metrics["trend"]
+
+    # 1. Income Regularity (0-25)
+    # Proportion of months with regular income
+    income_score = int((regular_income_months / months) * 25)
+    income_score = max(5, min(25, income_score))
+
+    # 2. Payment Discipline (0-25)
+    # Based on Debit/Credit ratio
+    if ratio < 0.7:
+        payment_score = 24
+    elif ratio < 0.9:
+        payment_score = 20
+    else:
+        payment_score = 12
+    # Add small variation if months are high
+    if months >= 3: payment_score = min(25, payment_score + 1)
+
+    # 3. Spending Stability (0-25)
+    if ratio < 0.8:
+        spending_score = 22
+    elif ratio <= 1.0:
+        spending_score = 18
+    else:
+        spending_score = 10
+    
+    # 4. Savings Behavior (0-25)
+    if trend == "positive":
+        savings_score = 23
+    else:
+        savings_score = 12
+
+    # Final Total Score
+    # Formula: 300 base + (sum of factors) * 6
+    # Max: 300 + 100 * 6 = 900
+    total_sum = income_score + payment_score + spending_score + savings_score
+    total_score = 300 + (total_sum * 6)
+    total_score = min(900, total_score)
+    
+    return {
+        "total_score": int(total_score),
+        "income_score": income_score,
+        "payment_score": payment_score,
+        "spending_score": spending_score,
+        "savings_score": savings_score
+    }
+
+
+def call_gemini(summary, score):
+    prompt = f"""You are a financial analyst. Based on this transaction summary and rule-based credit score, generate explanations and advice.
 
 Transaction Summary: {summary}
+Calculated Credit Score: {score}
 
 Respond in this EXACT format, nothing else:
-TOTAL_SCORE: [number 300-900]
-INCOME_SCORE: [number 0-25]
-INCOME_TEXT: [exactly 2 sentences]
-PAYMENT_SCORE: [number 0-25]
-PAYMENT_TEXT: [exactly 2 sentences]
-SPENDING_SCORE: [number 0-25]
-SPENDING_TEXT: [exactly 2 sentences]
-SAVINGS_SCORE: [number 0-25]
-SAVINGS_TEXT: [exactly 2 sentences]
-SUMMARY: [exactly 3 sentences overall assessment]"""
+INCOME_TEXT: [exactly 2 sentences about income regularity]
+PAYMENT_TEXT: [exactly 2 sentences about payment discipline and consistency]
+SPENDING_TEXT: [exactly 2 sentences about spending habits and control]
+SAVINGS_TEXT: [exactly 2 sentences about savings trend and balance]
+SUMMARY: [exactly 3 sentences overall assessment and advice]"""
 
-    response = client.models.generate_content(
-        model="gemini-1.5-flash",
-        contents=prompt,
-    )
-    return response.text
+    try:
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+        )
+        if response and response.text:
+            print(f"[FinScore] Gemini Raw Response:\n{response.text}")
+            return response.text
+        else:
+            print("[FinScore] Gemini returned empty response.")
+            return ""
+    except Exception as e:
+        print(f"[FinScore] Gemini API call failed: {e}")
+        return ""
 
 
 def parse_gemini_response(text):
+    if not text:
+        return {}
     result = {}
+    allowed_keys = ["INCOME_TEXT", "PAYMENT_TEXT", "SPENDING_TEXT", "SAVINGS_TEXT", "SUMMARY"]
     for line in text.strip().splitlines():
         if ":" in line:
             key, _, value = line.partition(":")
-            result[key.strip()] = value.strip()
+            clean_key = key.strip().upper()
+            if clean_key in allowed_keys:
+                result[clean_key] = value.strip()
     return result
 
 
@@ -134,48 +206,61 @@ def analyze():
 
     # ── Parse CSV ────────────────────────────────────────────────────────
     try:
-        summary = parse_csv(filepath)
+        summary, metrics = parse_csv(filepath)
     except Exception as e:
         if os.path.exists(filepath):
             os.remove(filepath)
-        return render_template("index.html", error=f"CSV parsing failed: {str(e)}. Make sure your file has columns: Date, Description, Debit, Credit, Balance.")
+        return render_template("index.html", error=f"CSV parsing failed: {str(e)}.")
     finally:
         if os.path.exists(filepath):
             os.remove(filepath)
 
-    # ── Call Gemini with fallback ─────────────────────────────────────────
-    try:
-        raw = call_gemini(summary)
-        data = parse_gemini_response(raw)
-    except Exception as e:
-        # Graceful fallback: use dummy data so result page still renders
-        print(f"[FinScore] Gemini API error: {e}")
-        data = {
-            "TOTAL_SCORE": "650",
-            "INCOME_SCORE": "18",
-            "INCOME_TEXT": "Your income appears regular based on the transaction history. Monthly credits suggest a consistent earning pattern.",
-            "PAYMENT_SCORE": "16",
-            "PAYMENT_TEXT": "Payment discipline looks moderate based on the available data. Regular bill payments are observed in the statement.",
-            "SPENDING_SCORE": "15",
-            "SPENDING_TEXT": "Spending patterns show moderate stability across the period. Essential expenses form the majority of debits.",
-            "SAVINGS_SCORE": "16",
-            "SAVINGS_TEXT": "The balance trend indicates a positive savings behavior. Ending balance is higher than starting balance.",
-            "SUMMARY": "Based on available transaction data, this user demonstrates moderate financial health. Income regularity and controlled spending are positive indicators. A credit score of 650 reflects a fair risk profile suitable for small credit products.",
-        }
-
-    # Ensure required keys exist with fallbacks
-    defaults = {
-        "TOTAL_SCORE": "650",
-        "INCOME_SCORE": "15",
-        "INCOME_TEXT": "Income data is being processed. Please review details manually.",
-        "PAYMENT_SCORE": "15",
-        "PAYMENT_TEXT": "Payment discipline is being evaluated. Please review details manually.",
-        "SPENDING_SCORE": "15",
-        "SPENDING_TEXT": "Spending patterns are being analyzed. Please review details manually.",
-        "SAVINGS_SCORE": "15",
-        "SAVINGS_TEXT": "Savings behavior is being assessed. Please review details manually.",
-        "SUMMARY": "Analysis is complete. Please review the detailed breakdown above. Contact support for further assistance.",
+    # ── Calculate Scoring Locally ───────────────────────────────────────
+    scores = calculate_score(metrics)
+    
+    # Base data for UI
+    data = {
+        "TOTAL_SCORE": str(scores["total_score"]),
+        "INCOME_SCORE": str(scores["income_score"]),
+        "PAYMENT_SCORE": str(scores["payment_score"]),
+        "SPENDING_SCORE": str(scores["spending_score"]),
+        "SAVINGS_SCORE": str(scores["savings_score"]),
     }
+
+    # ── Call Gemini for Insights ─────────────────────────────────────────
+    raw_text = call_gemini(summary, scores["total_score"])
+    ai_insights = parse_gemini_response(raw_text)
+    
+    # Merge AI insights but PROTECT the scores from being overwritten
+    for key in ["INCOME_TEXT", "PAYMENT_TEXT", "SPENDING_TEXT", "SAVINGS_TEXT", "SUMMARY"]:
+        if key in ai_insights and ai_insights[key]:
+            data[key] = ai_insights[key]
+
+    # Ensure required keys exist with context-aware fallbacks
+    if scores["total_score"] >= 700:
+        defaults = {
+            "INCOME_TEXT": "Income appears stable with consistent monthly credits observed in the transactions.",
+            "PAYMENT_TEXT": "Payments are regular with no major irregularities or defaults observed in the statement.",
+            "SPENDING_TEXT": "Spending is balanced, with essential expenses forming the baseline of debit activity.",
+            "SAVINGS_TEXT": "Savings trend is healthy, showing a positive progression throughout the analyzed period.",
+            "SUMMARY": "The user demonstrates stable financial behavior and consistent income patterns. Based on the transaction history, they are suitable for basic credit products and show a low-to-moderate risk profile.",
+        }
+    elif scores["total_score"] >= 550:
+        defaults = {
+            "INCOME_TEXT": "Income regularity is moderate, with some fluctuations in monthly credits.",
+            "PAYMENT_TEXT": "Payment patterns are generally consistent but could be improved for better reliability.",
+            "SPENDING_TEXT": "Spending shows moderate stability, with a few periods of higher-than-average debits.",
+            "SAVINGS_TEXT": "Savings behavior is fair, though the balance trend shows some volatility.",
+            "SUMMARY": "The user shows fair financial health with some areas for improvement in spending control. They may be eligible for limited credit products with additional verification.",
+        }
+    else:
+        defaults = {
+            "INCOME_TEXT": "Income regularity is low, with irregular or missing credit patterns observed.",
+            "PAYMENT_TEXT": "Payment discipline shows significant irregularities that may impact creditworthiness.",
+            "SPENDING_TEXT": "Spending levels are high relative to income, indicating potential liquidity constraints.",
+            "SAVINGS_TEXT": "Savings trend is negative or stagnant, with ending balance lower than starting points.",
+            "SUMMARY": "The user demonstrates high-risk financial behavior with irregular income and high spending. Significant improvements in savings and consistency are required for credit eligibility.",
+        }
     for k, v in defaults.items():
         data.setdefault(k, v)
 
@@ -348,4 +433,4 @@ def generate_pdf(data):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=5051)

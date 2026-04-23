@@ -30,20 +30,25 @@ Over **190 million Indians** earn consistently through UPI but lack a formal "CI
 
 ---
 
-## 🧠 How It Works (The Logic)
+## 🧠 How It Works (The Hybrid Engine)
+
+FinScore uses a **Hybrid Scoring System** that combines deterministic rule-based algorithms with AI-generated qualitative insights.
 
 ### 1. Data Engineering (Pandas)
-The engine parses the raw statement and extracts:
-- **Income Regularity**: Counts months where credits exceed ₹1,000.
-- **Spending Velocity**: Calculates the Debit-to-Credit ratio.
-- **Financial Trend**: Compares starting vs. ending balance to determine the "Balance Trend."
-- **Stability**: Measures transaction volume and monthly averages to detect anomalies.
+The engine parses raw CSV logs and extracts structured metrics:
+- **Income Regularity**: Proportion of months where credits exceed ₹1,000.
+- **Payment Discipline**: Analysis of Debit-to-Credit velocity and consistency.
+- **Spending Stability**: Multi-tier assessment of liquidity and expense control.
+- **Savings Behavior**: Historical balance trend analysis.
 
-### 2. AI Assessment (Gemini 1.5 Flash)
-A transaction summary is sent to AI to generate insights, which generates:
-- **Qualitative Reasoning**: Why a specific score was given.
-- **Risk Assessment**: Suitability for small-ticket credit products.
-- **Factor Scoring**: Breakdown of Income, Payments, Spending, and Savings (0–25 each).
+### 2. Rule-Based Scoring (Python Backend)
+Unlike systems that rely solely on AI, FinScore calculates the **Credit Score (300-900)** and **Factor Scores (0-25)** locally in Python. This ensures:
+- **Consistency**: The same data always results in the same score.
+- **Transparency**: Clear mathematical logic behind every point awarded.
+- **Reliability**: A functional score is generated even if the API is offline.
+
+### 3. AI Insights (Gemini 1.5 Flash)
+Once the score is calculated, the metrics are sent to Gemini to generate human-readable explanations, financial advice, and risk summaries. If the API fails, a context-aware fallback system provides high-quality static assessments tailored to the user's score range.
 
 ---
 
@@ -54,7 +59,6 @@ Generate a free API key at [Google AI Studio](https://aistudio.google.com/).
 
 ### 2. Installation
 ```bash
-cd finscore
 python3 -m pip install -r requirements.txt
 ```
 
@@ -62,7 +66,7 @@ python3 -m pip install -r requirements.txt
 ```bash
 python3 app.py
 ```
-Open **[http://localhost:5050](http://localhost:5050)** in your browser.
+Open **[http://localhost:5051](http://localhost:5051)** in your browser.
 
 ---
 
