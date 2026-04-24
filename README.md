@@ -1,7 +1,7 @@
-# 🏦 FinScore — 🇮🇳 Financial Inclusion via AI
+# 🏦 FinScore — 🇮🇳 Financial Inclusion via logic
 
 > **Bridging the Credit Gap for 190M+ Unbanked Indians**  
-> FinScore is an AI-driven alternative credit assessment platform that analyzes UPI / bank statement CSVs to generate a professional credit report for users without formal credit history.
+> FinScore is a hybrid alternative credit assessment platform that analyzes UPI / bank statement CSVs to generate a professional credit report for users without formal credit history.
 
 ---
 
@@ -94,3 +94,4 @@ Open **[http://localhost:5051](http://localhost:5051)** in your browser.
 ### Result Dashboard
 ![Result](screenshots/result.png)
 
+- 📈 **Dynamic Behavior Testing**: The system adapts scores based on different transaction patterns (low, mid, high financial profiles).
