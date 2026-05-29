@@ -66,7 +66,7 @@ python3 -m pip install -r requirements.txt
 ```bash
 python3 app.py
 ```
-Open **[http://localhost:5051](http://localhost:5051)** in your browser.
+Open **[https://finscore-credit-ai.onrender.com](https://finscore-credit-ai.onrender.com)** in your browser.
 
 ---
 
